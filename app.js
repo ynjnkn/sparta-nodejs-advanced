@@ -31,14 +31,14 @@ router.get("/", (req, res) => {
     res.send("");
 });
 
-// [API] 투두 목록 조회
+// [API] 할 일 목록 조회
 router.get("/todos", async (req, res) => {
     const todos = await ToDo.find({}).sort("-order").exec();
 
     res.send({ todos });
 })
 
-// [API] 투두 아이템 생성
+// [API] 할 일 아이템 생성
 router.post("/todos", async (req, res) => {
     const { value } = req.body;
     const maxOrderToDo = await ToDo.findOne().sort("-order").exec();
@@ -52,43 +52,32 @@ router.post("/todos", async (req, res) => {
     res.send({ toDo });
 });
 
-// [API] 투두 아이템 순서 변경
-router.patch("/todos/:toDoId", async (req, res) => {
-    // 1. toDoId, order 입력값 불러오기 [v]
-    // 2. toDoId로 수정하려는 투두 아이템(currentToDo) 찾기 [v]
-    // 3. 입력받은 order로 기존 투두 아이템(targetToDo) 찾기 [v]
-    // 4. targetToDo의 순서를 currentToDo의 순서로 선언 & 저장
-    // 5. currentToDo의 순서를 입력받은 order로 선언 & 저장
-    // 6. 응답 리턴
+// [API] 할 일 아이템 수정 (완료 여부, 값, 순서 변경 가능)
+router.patch("/todos/:todoId", async (req, res) => {
+    const { todoId } = req.params;
+    const { order, value, done } = req.body;
 
-    console.log("*** 순서 변경 시작 ***");
-
-    const { toDoId } = req.params;
-    const { order } = req.body;
-
-    const switchingToDo = await ToDo.findOne({ _id: toDoId }).exec();
-    if (!switchingToDo) {
-        throw new Error("존재하지 않는 todo 데이터입니다.");
-    }
+    const todo = await ToDo.findById(todoId).exec();
 
     if (order) {
-        const switchedToDo = await ToDo.findOne({ order }).exec();
-        if (switchedToDo) {
-            console.log(`변경 전 switchingToDo: ${switchingToDo.value} @ ${switchingToDo.order}`);
-            console.log(`변경 전 switchedToDo: ${switchedToDo.value} @ ${switchedToDo.order}`);
-            switchedToDo.order = switchingToDo.order;
-            await switchedToDo.save();
-            console.log(`변경 후 switchedToDo: ${switchedToDo.value} @ ${switchedToDo.order}`);
+        const targetTodo = await ToDo.findOne({ order }).exec();
+        if (targetTodo) {
+            targetTodo.order = todo.order;
+            await targetTodo.save();
         }
-        switchingToDo.order = order;
-    };
-    await switchingToDo.save();
-    console.log(`변경 후 switchingToDo: ${switchingToDo.value} @ ${switchingToDo.order}`);
-    console.log("*** 순서 변경 완료 ***");
+        todo.order = order;
+    } else if (value) {
+        todo.value = value;
+    } else if (done !== undefined) {
+        todo.doneAt = done ? new Date() : null;
+    }
+
+    await todo.save();
+
     res.send({});
 });
 
-// [API] 투두 아이템 삭제
+// [API] 할 일 아이템 삭제
 router.delete("/todos/:toDoId", async (req, res) => {
     // 1. 삭제하려는 투두 아이템의 ID를 URL에서 가져오기
     // 2. DB에서 해당 아이디의 오브젝트 찾기
@@ -108,5 +97,5 @@ router.delete("/todos/:toDoId", async (req, res) => {
             })
     });
 
-    // await ToDo.deleteOne({ _id: toDoId });
+    // await ToDo.deleteOne({ _id: toDoId }).exec();
 });
