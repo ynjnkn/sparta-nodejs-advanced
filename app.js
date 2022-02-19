@@ -87,3 +87,26 @@ router.patch("/todos/:toDoId", async (req, res) => {
     console.log("*** 순서 변경 완료 ***");
     res.send({});
 });
+
+// [API] 투두 아이템 삭제
+router.delete("/todos/:toDoId", async (req, res) => {
+    // 1. 삭제하려는 투두 아이템의 ID를 URL에서 가져오기
+    // 2. DB에서 해당 아이디의 오브젝트 찾기
+    // 3. 삭제
+
+    const { toDoId } = req.params;
+    ToDo.deleteOne({ _id: toDoId }, (err) => {
+        if (err) {
+            console.log(`투두 아이템 ${toDoId} 삭제 실패`);
+        }
+        // console.log(`투두 아이템 ${toDoId} 삭제 성공`);
+        // console.log(`투두 아이템 ${toDoId} 삭제 성공`);
+        res
+            // .send({});
+            .json({
+                msg: `투두 아이템 ${toDoId} 삭제 성공`,
+            })
+    });
+
+    // await ToDo.deleteOne({ _id: toDoId });
+});
